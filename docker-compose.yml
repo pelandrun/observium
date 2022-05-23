@@ -1,0 +1,65 @@
+# Docker compose file for Observium
+# Maintained by somsakc@hotmail.com
+
+version: '3'
+
+services:
+  db:
+    image: mariadb:10.6.4
+    volumes:
+      - server_db_data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_db_pass
+      - MYSQL_USER=observium
+      - MYSQL_PASSWORD=my_db_pass
+      - MYSQL_DATABASE=observium
+      - TZ=Etc/GMT+3
+
+    restart: unless-stopped
+
+  observium:
+          #    build: observium
+    image: pelandrun/observium
+    volumes:
+      - observium_logs:/opt/observium/logs
+      - observium_rrd:/opt/observium/rrd
+    environment:
+      - OBSERVIUM_ADMIN_USER=admin
+      - OBSERVIUM_ADMIN_PASS=adm_pass
+      - OBSERVIUM_DB_HOST=db
+      - OBSERVIUM_DB_NAME=observium
+      - OBSERVIUM_DB_USER=observium
+      - OBSERVIUM_DB_PASS=my_db_pass
+      - OBSERVIUM_BASE_URL=https://observium
+      - TZ=Etc/GMT+3
+
+    ports:
+      - "8888:80"
+    restart: unless-stopped
+    depends_on:
+      - db
+  nginx-proxy-manager:
+    image: 'jc21/nginx-proxy-manager:latest'
+    environment:
+      - TZ=Etc/GMT+3
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '81:81'
+      - '443:443'
+    volumes:
+      - server_nginxpm_data:/data
+      - server_nginxpm_pm-letsencrypt:/etc/letsencrypt
+        #- /etc/localtime:/etc/localtime
+
+volumes:
+  server_db_data:
+  observium_logs:
+  observium_rrd:
+  server_nginxpm_data:
+  server_nginxpm_pm-letsencrypt:
+networks:
+  default:
+    external:
+      name: servers1_net
+
