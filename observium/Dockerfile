@@ -56,7 +56,7 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 RUN apt-get update && \
     apt-get install -y libapache2-mod-php7.4 php7.4-cli php7.4-mysql php7.4-mysqli php7.4-gd php7.4-json php-pear snmp fping mysql-server mysql-client python3-mysqldb rrdtool subversion whois mtr-tiny ipmitool graphviz imagemagick apache2 python3-pymysql python-is-python3 monitoring-plugins-basic monitoring-plugins-common monitoring-plugins-standard tzdata&& \
     apt-get install -y libvirt-clients && \
-    apt-get install -y cron curl locales supervisor wget && \
+    apt-get install -y cron curl locales supervisor wget dnsmasq && \
     apt-get clean && \
     rm -f /etc/apache2/sites-available/* && \
     rm -f /etc/cron.d/* && \
@@ -71,14 +71,17 @@ RUN apt-get update && \
     mkdir /var/log/apache2
 
 # set locale
-RUN locale-gen en_US.UTF-8
+RUN locale-gen en_US.UTF-8 && \
+    sed -i '/^DNSMASQ_OPTS=/a DNSMASQ_OPTS="$DNSMASQ_OPTS -k"' /etc/init.d/dnsmasq 
+
 
 # install observium package
 RUN mkdir -p /opt/observium /opt/observium/logs /opt/observium/rrd && \
     cd /opt && \
     wget http://www.observium.org/observium-community-latest.tar.gz && \
     tar zxvf observium-community-latest.tar.gz && \
-    rm -f observium-community-latest.tar.gz
+    rm -f observium-community-latest.tar.gz && \
+    echo ""
 
 # configure observium package
 RUN cd /opt/observium && \
@@ -91,8 +94,8 @@ RUN cd /opt/observium && \
 
 COPY observium-init.sh /opt/observium/observium-init.sh
 
-RUN chmod a+x /opt/observium/observium-init.sh && \
-    chown -R www-data:www-data /opt/observium
+RUN chmod a+x /opt/observium/observium-init.sh
+#    chown -R www-data:www-data /opt/observium
 
 # check version and installed files
 RUN [ -f /opt/observium/VERSION ] && cat /opt/observium/VERSION
@@ -115,7 +118,11 @@ RUN a2dismod mpm_event && \
 COPY logrotate-conf /etc/logrotate.conf
 COPY logrotate-cron /etc/cron.d/logrotate
 COPY observium-cron /etc/cron.d/observium
-RUN chmod 644 /etc/logrotate.conf /etc/cron.d/logrotate /etc/cron.d/observium
+RUN chmod 644 /etc/logrotate.conf /etc/cron.d/logrotate /etc/cron.d/observium && \
+   echo no-resolv >> /etc/dnsmasq.conf && \
+   echo server=1.1.1.1 >> /etc/dnsmasq.conf && \
+   echo server=8.8.8.8 >> /etc/dnsmasq.conf
+
 
 # configure working directory
 WORKDIR /opt/observium

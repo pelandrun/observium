@@ -7,7 +7,7 @@ services:
   db:
     image: mariadb:10.6.4
     volumes:
-      - server_db_data:/var/lib/mysql
+      - ./server_db_data:/var/lib/mysql
     environment:
       - MYSQL_ROOT_PASSWORD=root_db_pass
       - MYSQL_USER=observium
@@ -21,8 +21,8 @@ services:
           #    build: observium
     image: pelandrun/observium
     volumes:
-      - observium_logs:/opt/observium/logs
-      - observium_rrd:/opt/observium/rrd
+      - ./observium_logs:/opt/observium/logs
+      - ./observium_rrd:/opt/observium/rrd
     environment:
       - OBSERVIUM_ADMIN_USER=admin
       - OBSERVIUM_ADMIN_PASS=adm_pass
@@ -30,8 +30,11 @@ services:
       - OBSERVIUM_DB_NAME=observium
       - OBSERVIUM_DB_USER=observium
       - OBSERVIUM_DB_PASS=my_db_pass
-      - OBSERVIUM_BASE_URL=https://observium
+      - OBSERVIUM_BASE_URL=https://obcav.jcnet.net.ar
       - TZ=Etc/GMT+3
+   
+    dns:
+      - 127.0.0.53
 
     ports:
       - "8888:80"
@@ -48,18 +51,12 @@ services:
       - '81:81'
       - '443:443'
     volumes:
-      - server_nginxpm_data:/data
-      - server_nginxpm_pm-letsencrypt:/etc/letsencrypt
+      - ./server_nginxpm_data:/data
+      - ./server_nginxpm_pm-letsencrypt:/etc/letsencrypt
         #- /etc/localtime:/etc/localtime
 
-volumes:
-  server_db_data:
-  observium_logs:
-  observium_rrd:
-  server_nginxpm_data:
-  server_nginxpm_pm-letsencrypt:
 networks:
   default:
     external:
-      name: servers1_net
+      name: servers
 
